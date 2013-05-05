@@ -1,0 +1,191 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>Data Editor</title>
+		<script type="text/template" class="single-field">
+			<li class="field single">
+				<div class="handle"></div>
+				<div class="controls"><% make_controls() %></div>
+				<div class="label"><% make_label(name) %></div>
+				<div class="contents"><% value %></div>
+			</li>
+		</script>
+		<script type="text/template" class="compound-field">
+			<li class="field compound">
+				<div class="label"><% make_label(name) %></div>
+				<div class="handle"></div>
+				<div class="controls"><% make_controls() %></div>
+				<div class="contents">
+				</div>
+			</li>
+		</script>
+		<script src="http://code.jquery.com/jquery.min.js"></script>
+		<script src="http://code.jquery.com/ui/1.10.2/jquery-ui.js"></script>
+		<script type="text/javascript">
+// Interrupting auto-tabbing.
+var svg_ns = "http://www.w3.org/2000/svg";
+var xlink_ns = "http://www.w3.org/1999/xlink";
+var heyo;
+var toString = Object.prototype.toString;
+
+var make_label = function (s) {
+	return $('<input></input>').attr('type', 'text').addClass('label field-name').val(s);
+}
+
+var add_field = function(tag) {
+	return function (target) {	
+		return function (e) { 
+			var row = $('<li></li>').addClass('field').addClass(tag);
+			var handle = $('<div></div>').addClass('handle');
+			row.append(handle);
+			var cntrl = $('<div></div>').addClass('controls');
+			row.append(cntrl);
+			var label = make_label('new_' + tag + '_field');
+			row.append(label);
+			var contents = $('<input></input>').addClass('contents').attr('type', tag);
+			row.append(contents);
+			attach(cntrl, del(row));
+	
+			target.append(row);
+			return row;
+		};
+	}
+}
+var add_reference_field_to = function(target) {
+	return function () {
+		var row = $('<li></li>').addClass('field reference');
+		var cntrl = $('<div></div>').addClass('controls');
+		row.append(cntrl);
+		attach(cntrl, del(row));
+		var label = make_label('new_object_reference');
+		row.append(label);
+		var contents = $('<div></div>').addClass('contents');
+		row.append(contents);
+
+		target.append(row);
+		return row;
+	};
+}
+var add_object_to = function(target) {
+	return function (e) {
+		var row = $('<li></li>').addClass('field object');
+		var handle = $('<div></div>').addClass('handle');
+		row.append(handle);
+		var label = make_label('new_object_field');
+		row.append(label);
+		var cntrl = $('<div></div>').addClass('controls');
+		row.append(cntrl);
+		var contents = $('<ul></ul>').addClass('contents');
+		row.append(contents);
+		attach(cntrl, del(row));
+		attach(cntrl, field_controls_for(contents));
+		
+		target.append(row);
+		return row;
+	}
+}
+var add_array_to = function(target) {
+	return function (e) {
+		var row = $('<li></li>').addClass('field array');
+		var label = make_label('new_array_field');
+		row.append(label);
+		var cntrl = $('<div></div>').addClass('controls');
+		row.append(cntrl);
+		var contents = $('<ol></ol>').addClass('contents');
+		row.append(contents);
+		attach(cntrl, del(row));
+		attach(cntrl, field_controls_for(contents));
+		
+		target.append(row);
+		return row;
+	}
+}
+
+var field_controls_for = function (target) { return {
+txt: $('<button></button>').html('abc').click(add_field('text')(target)),
+num: $('<button></button>').html('123').click(add_field('range')(target)),
+obj: $('<button></button>').html('{}').click(add_object_to(target)),
+arr: $('<button></button>').html('[]').click(add_array_to(target)),
+ref: $('<button></button>').html('->').click(add_reference_field_to(target)),
+}};
+var del = function (target) { return { close: $('<button></button>').html('x').addClass('close').click(function() { target.remove(); }) }; };
+
+$(document).ready(function() {
+	attach($('#workspace-controls'), field_controls_for($('#workspace')));
+
+	$(document).on('change', 'input', display_json);
+	$(document).on('click', 'button', display_json);
+});
+
+function display_json () {
+	$('#str').html('');
+	$('#workspace>li').each(function() {
+			$('#str').append($('<code></code>').html(JSON.stringify(object_from_field(this))));
+			});
+}
+
+function attach(element, obj) {
+	for (key in obj) { $(element).append(obj[key]); }
+}
+
+function curve_between(object_one, vector_one, object_two, vector_two) {
+	var start = [ $(object_one).offset().left + $(object_one).width()*0.5, $(object_one).offset().top + $(object_one).height()*0.5 ];
+	var end = [ $(object_two).offset().left + $(object_two).width()*0.5, $(object_two).offset().top + $(object_two).height()*0.5 ];
+	var control_one = [ start[0] + vector_one[0], start[1] + vector_one[1] ];
+	var control_two = [ end[0] + vector_two[0], end[1] + vector_two[1] ];
+
+	var points = "M" + start.join(',') + " C" + control_one.join(',') + " " + control_two.join(',') + " " + end.join(',');
+
+	return points;
+}
+
+/*$(document).ready(function() {
+	$('#one, #two').each(function() { $(this).offset({top: Math.random()*400, left: Math.random()*400});});
+	$('svg').append($(document.createElementNS(svg_ns, 'path')).attr('d', curve_between($('#one'), [100, 0], $('#two'), [0, -100])));
+	$('#one, #two').draggable({drag: function () { $('svg path').attr('d', curve_between($('#one'), [100, 0], $('#two'), [0,-100])); }});
+});*/
+
+
+		</script>
+		<style type="text/css">
+			.field-name {
+				border: none; 
+				min-width: 10em;
+			}
+			
+			.handle { 
+				display: inline-block;
+				border-radius: 100%;
+				width: 10px;
+				height: 10px;
+				border: 1px dashed black;
+			}
+			.controls { display: inline-block; }
+			.controls button { border-radius: 100%; padding: 1px; }
+			.close { color: red; }
+			
+			.object, .array { box-shadow: 0px 0px 3px 3px; }
+			.field.object>.contents, .field.array>.contents { display: block; }
+			.field.array>.contents>li>.field-name { display: none; }
+			.field.object>.contents>li { list-style-type: none; }
+
+			#str { float: right; max-width: 25%; vertical-align: top;}
+			#str code { display: block; white-space: pre-wrap; word-wrap: break-word; margin-bottom: 1em;}
+			
+			#workspace { max-width: 70%; display: block;}
+			#workspace>.field { 
+				display: inline-block; 
+				box-shadow: 0px 0px 10px 10px; 
+				margin: 10px; 
+			}
+
+		</style>
+	</head>
+	<body>
+		<div id="workspace-controls" class="controls"></div>
+		<div id="str"></div>
+		<div id="workspace"></div>
+	</body>
+</html>
+

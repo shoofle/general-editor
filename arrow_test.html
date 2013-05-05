@@ -1,0 +1,76 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>Data Editor</title>
+		<script src="http://code.jquery.com/jquery.min.js"></script>
+		<script src="http://code.jquery.com/ui/1.10.2/jquery-ui.js"></script>
+		<script type="text/javascript">
+// Interrupting auto-tabbing.
+var svg_ns = "http://www.w3.org/2000/svg";
+var xlink_ns = "http://www.w3.org/1999/xlink";
+
+var heyo;
+
+var toString = Object.prototype.toString;
+
+function curve_between(object_one, vector_one, object_two, vector_two) {
+	var start = [ $(object_one).offset().left + $(object_one).width()*0.5, $(object_one).offset().top + $(object_one).height()*0.5 ];
+	var end = [ $(object_two).offset().left + $(object_two).width()*0.5, $(object_two).offset().top + $(object_two).height()*0.5 ];
+	var control_one = [ start[0] + vector_one[0], start[1] + vector_one[1] ];
+	var control_two = [ end[0] + vector_two[0], end[1] + vector_two[1] ];
+
+	var points = "M" + start.join(',') + " C" + control_one.join(',') + " " + control_two.join(',') + " " + end.join(',');
+
+	return points;
+}
+
+$(document).ready(function() {
+	$('#one, #two').each(function() { $(this).offset({top: Math.random()*400, left: Math.random()*400});});
+	$('svg').append($(document.createElementNS(svg_ns, 'path')).attr('d', curve_between($('#one'), [100, 0], $('#two'), [0, -100])));
+	$('#one, #two').draggable({drag: function () { $('svg path').attr('d', curve_between($('#one'), [100, 0], $('#two'), [0,-100])); }});
+
+
+
+});
+		</script>
+		<style type="text/css">
+			div {
+				width: 2em;
+				height: 2em;
+				border: 2px dashed black;
+				border-radius: 1em;
+			}
+			#one { background-color: green; }
+			#two { background-color: blue; }
+			
+			svg { 
+				top: 0; left: 0;
+				position: absolute; 
+				border: 1px solid black;
+				width: 500px;
+				height: 500px;
+				pointer-events: none;
+			}
+			path { 
+				fill: none; 
+				stroke: black; 
+				stroke-width: 2; 
+				marker-end: url("#arrow");
+			}
+		</style>
+	</head>
+	<body>
+		<!--<svg xmlns="http://www.w3.org/2000/svg" version="1.1" height="600px" width="25%" viewBox="0 0 100 100" preserveAspectRatio="xMidYMax" id="arena">-->
+		<div id="one"></div>
+		<div id="two"></div>
+		<svg>
+			<defs>
+				<marker id="arrow" markerUnits="strokeWidth" orient="auto" viewBox="0 -6 12 12" refX=12 markerWidth=6 markerHeight=6>
+					<polygon points="0,6 12,0 0,-6" />
+				</marker>
+			</defs>
+		</svg>
+	</body>
+</html>
+
