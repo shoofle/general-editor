@@ -1,0 +1,6 @@
+.field.number>.controls>.number,  .field.number>.controls>.string,  .field.number>.controls>.array,  .field.number>.controls>.object {
+	display: none;
+}
+.field.string>.controls>.number,  .field.string>.controls>.string,  .field.string>.controls>.array,  .field.string>.controls>.object {
+	display: none;
+}

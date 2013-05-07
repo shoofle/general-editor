@@ -1,0 +1,238 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>Data Editor</title>
+		<script type="text/template" class="single-field">
+			<li class="field single">
+				<div class="handle"></div>
+				<div class="controls"><% make_controls() %></div>
+				<div class="label"><% make_label(name) %></div>
+				<div class="contents"><% value %></div>
+			</li>
+		</script>
+		<script type="text/template" class="compound-field">
+			<li class="field compound">
+				<div class="label"><% make_label(name) %></div>
+				<div class="handle"></div>
+				<div class="controls"><% make_controls() %></div>
+				<div class="contents">
+				</div>
+			</li>
+		</script>
+		<script src="http://code.jquery.com/jquery.min.js"></script>
+		<script src="http://code.jquery.com/ui/1.10.2/jquery-ui.js"></script>
+		<script src="utility.js"></script>
+		<script type="text/javascript">
+// Interrupting auto-tabbing.
+var svg_ns = "http://www.w3.org/2000/svg";
+var xlink_ns = "http://www.w3.org/1999/xlink";
+var toString = Object.prototype.toString;
+
+var the_object;
+
+
+/*need:
+  handle class
+  drag -> data
+  data -> drag
+ */
+
+// TODO: use draggable->cursorAt option to remove all the calls to half widths
+
+
+// In handle_from_data, `this` is bound to the handle DOM object (jQuery'd)
+// In data_from_handle, same.
+function create_handle_binding(handle_from_data, data_from_handle, visual_update, options) {
+	var output = {};
+	output.create = function (e, ui) {
+		var field = $(e.target).parent();
+		var initial = container.data('value');
+		if (!initial) {
+			var handle_position = element_position($(e.target));
+			field.data('value') = data_from_handle.call( field, handle_position, field.data('value'), $(e.target), e, ui);
+		}
+		handle_from_data.call( $(e.target), field.data('value') );
+//		update_svg_element(container.data('shape'), container.data('obj'));
+	}
+	output.drag = function (e, ui) {
+		var container = $(e.target).parent();
+		var position = element_position($(e.target));
+		container.data('obj')[property_name] = data_from_handle.call( container, position, container.data('obj'), $(e.target), e, ui);
+//		visual_update.call( container, container.data('obj') );
+		update_svg_element(container.data('shape'), container.data('obj'));
+	}
+	jQuery.extend(output, options);
+	return output;
+}
+
+
+
+
+function handle_from_distance (distance, owner) {
+	var position = {};
+	position.left = owner.position.x + distance - $(this).width()*0.5;
+	position.top = owner.position.y - $(this).height()*0.5;
+	$(this).offset(position);
+}
+function calculate_distance(handle_position, previous_value) {
+
+	var dx = handle_position.x - owner.position.x;
+	var dy = handle_position.y - owner.position.y;
+	var distance = Math.sqrt(dx*dx + dy*dy);
+	return distance;
+}
+var rad_binding = create_handle_binding('radius', handle_from_distance, calculate_distance);
+function handle_from_vector (vector, owner) {
+	var position = {};
+	position.left = vector.x + owner.position.x - $(this).width()*0.5;
+	position.top = vector.y + owner.position.y - $(this).height()*0.5;
+	$(this).offset(position);
+}
+function calculate_vector (handle_position, owner) {
+	return { x: handle_position.x - owner.position.x, y: handle_position.y - owner.position.y };
+}	
+var length_binding = create_handle_binding('direction', handle_from_vector, calculate_vector);
+
+function handle_from_position (position) {
+	$(this).offset({ left: position.x - $(this).width()*0.5, top: position.y - $(this).height()*0.5 });
+}
+function calculate_position (handle_position, owner, handle) { 
+	return handle_position; 
+}
+var position_binding = create_handle_binding('position', handle_from_position, calculate_position);
+var drag_bindings = {
+	'radius': [handle_from_distance, calculate_distance],
+	'direction': [handle_from_vector, calculate_vector],
+	'position': [handle_from_position, calculate_position],
+}
+function make_handle(property, handle_from_data, data_from_handle) {
+	var h = $('<span></span>').addClass('property-handle').html('x');
+	h.draggable(create_handle_binding(property, handle_from_data, data_from_handle));
+	return h;
+}
+
+function add_handle_field(type, name) {
+	return function (target) {
+		var field = $('<li></li>').addClass('field handle')
+		var h = $('<span></span>').addClass('property-handle').html('x');
+		h.draggable(create_handle_binding(name, drag_bindings[type][0], drag_bindings[type][1]));
+	};
+}
+
+$(document).ready(function() {
+	$('.container').each( function() { 
+		$(this).data('obj', {}); 
+		if ($(this).children('.length-handle').length == 0) {
+			$(this).data('shape', $(ns_elem('circle', svg_ns)));
+		}
+		else {
+			$(this).data('shape', $(ns_elem('line', svg_ns)));
+		}
+		$('svg').append($(this).data('shape'));
+		});
+	$(document).click('.container', function(e) { $(e.target).parent().children('.contents').toggle(400); });
+//	$('.handle').draggable(position_binding);
+	$('.container').draggable({ 
+		handle: '.handle',
+		create: function(e, ui) {
+			$(e.target).data('obj').position = element_position($(e.target).children('.handle'));
+		},
+		drag: function(e, ui) { 
+			$(e.target).data('obj').position = element_position($(e.target).children('.handle'));
+			update_svg_element($(e.target).data('shape'), $(e.target).data('obj'));
+		},
+		});
+	$('#circle').append(make_handle('radius', drag_bindings['radius'][0], drag_bindings['radius'][1]));
+	$('#line').prepend(make_handle('radius', drag_bindings['radius'][0], drag_bindings['radius'][1]));
+	$('#line').prepend(make_handle('direction', drag_bindings['direction'][0], drag_bindings['direction'][1]));
+	$('.container').each(function() {
+			if ($(this).data('shape')) {
+				update_svg_element($(this).data('shape'), $(this).data('obj'));
+			}
+			});
+});
+
+// Potentially it should just draw a separate svg element for each way it can look at the object
+function update_svg_element (element, obj) {
+	if (element.is('line')) {
+		element.attr('x1', obj.position.x);
+		element.attr('y1', obj.position.y);
+		element.attr('x2', obj.position.x + obj.direction.x);
+		element.attr('y2', obj.position.y + obj.direction.y);
+
+		element.attr('stroke-width', obj.radius*2);
+	}
+	if (element.is('circle')) {
+		element.attr('cx', obj.position.x);
+		element.attr('cy', obj.position.y);
+		element.attr('r', obj.radius);
+	}
+}
+
+
+function element_position (element) {
+	return {x: $(element).offset().left + $(element).width()*0.5, y: $(element).offset().top + $(element).height()*0.5};
+}
+		</script>
+		<style type="text/css">
+			.handle, .radius-handle, .length-handle { 
+				display: inline-block;
+				border-radius: 100%;
+				width: 10px;
+				height: 10px;
+				border: 1px dashed black;
+			}
+			.handle {
+				position: absolute;
+			}
+			.container {
+				position: absolute;
+				display: inline-block;
+				border: 1px solid black;
+				border-radius: 10px;
+			}
+			svg {
+				position: absolute;
+				left: 0;
+				top: 0;
+				width: 100%;
+				height: 800px;
+				border: 1px solid black;
+			}
+			circle {
+				fill: rgba(127,200,180,0.4);
+			}
+			line {
+				stroke-linecap: round;
+				stroke-opacity: 0.4;
+				stroke: rgba(127, 180, 200,0.5);
+			}
+
+		</style>
+	</head>
+	<body>
+		<svg></svg>
+		<div id="obj" class="container">
+			<span class="handle">+</span>
+			<span class="radius-handle">o</span>
+			<div class="contents">
+				Values<br/>
+				Go<br/>
+				Here<br/>
+			</div>
+		</div>
+		<div class="container">
+			<span class="handle">+</span>
+			<span class="radius-handle">o</span>
+			<span class="length-handle">o</span>
+			<div class="contents">
+				Here <br/>
+				Are <br/>
+				Some <br/>
+				Values
+			</div>
+		</div>
+	</body>
+</html>
+

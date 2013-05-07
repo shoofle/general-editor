@@ -59,8 +59,10 @@ function object_from_field (field) {
 	}
 	else if (field.is('.reference')) {
 		output = null;
-
-		if (field.children('.contents')
+		//if (field.children('.contents')
+		//output = field.children('.contents').val();
+	}
+	else {
 		output = field.children('.contents').val();
 	}
 	return output;

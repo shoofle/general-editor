@@ -1,0 +1,138 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>Mock-up of editor</title>
+	</head>
+	<body>
+		<ul class="workspace">
+			<li class="field number"> {"name": "height of the player", "type": "number", "contents": 5056.2}
+				var obj = $($(".workspace>.field")[0]).data("obj");
+				obj["name"] = "height of the player";
+				obj["type"] = "number";
+				obj["contents"] = 5056.2
+				obj.getContents() returns 5056.2
+				obj.rawObject() returns {"name": "height of the player", "type": "number", "contents": 5056.2}
+				obj.process() returns 5056.2
+				<label>height of the player</label>
+				<span class="contents number">5056.2</span>
+			</li>
+			<li class="field array"> {"name": "name of the array", "type": "array", "contents": []}
+			<script>
+				element = $($('.workspace>.field')[1]);
+				this <=> element.data('obj');
+				this.parent = null;
+				this.element = element;
+				this.name = '';
+				this.type = '';
+				this.contents = [];
+				this.setByValue = function (some_array) {
+					this.contents = [];
+					jQuery.each(some_array, function(index, value) {
+						this.contents.push(makeNewObject(value));
+					});
+					this.updateHTML();
+				};
+				this.push = function (some_object) {
+					this.contents.push(makeNewObject(value));
+					this.updateHTML();
+				}
+				this.updateHTML = function () {
+					this.element.html('');
+					this.element.append($('<div></div>').addClass('name').html(this.name));
+					this.element.append($('<div></div>').addClass('type').html(this.type));
+					this.element.append($('<ol></ol>').addClass('contents'));
+					jQuery.each(this.contents, function(index, child) {
+						child.updateHTML();
+						this.element.children('contents').append(child.element);
+					});
+				};
+				this.setMemberByName = function (name, value) {
+					for (var i=0; i<this.contents.length; i++) {
+						if (this.contents[i].name === name) {
+							this.contents[i].setByValue(value);
+						}
+					}
+				};
+				this.getMemberByName = function (name) {
+					for (var i=0; i<this.contents.length; i++) {
+						if (this.contents[i].name === name) {
+							return this.contents[i];
+						}
+					}
+				};
+				this.getMemberValueByName = function (name) {
+					return this.getMemberByName.process();
+				};
+				this.fullObject = function () {
+					var output = {};
+					output['name'] = this.getName();
+					output['type'] = this.getType();
+					output['contents'] = this.getContents();
+					return output;
+				};
+				this.process = function () {
+					var output = [];
+					for (var i=0; i<this.contents.length; i++) {
+						var current_object = this.contents[i];
+						output.push(this.contents[i].process());
+					}
+					return output;
+				};
+			</script>
+				<label>Name of the array</label>
+				<ol class="contents array">
+					<li class="field number"> {"name": "name of the variable", "type": "number", "contents": 52}
+						<label>name of the variable</label>
+						<span class="contents number">52</span>
+					</li>
+					<li class="field string"> {"name": "name of the second variable", "type": "string", "contents": "stringvar"}
+						<label>name of the second variable</label>
+						<span class="contents string">stringvar</span>
+					</li>
+				</ol>
+			</li>
+			<li class="field object"> {"name": "Enemy #1", "type": "object", "contents": {}}
+				<label>Enemy #1</label>
+				<ul class="contents object">
+					<li class="field string"> {"name": "enemy_name", "type": "string", "contents": "Blorax the Mighty"}
+						<label>enemy_name</label>
+						<span class="contents string">Blorax the Mighty</span>
+					</li>
+					<li class="field position"> {"name": "position", "type": "position", "contents": {"x": 120, "y": 56}}
+						<label>position</label>
+						<span class="contents position">
+							<span class="handle">X</span>
+						</span>
+					</li>
+					<li class="field position>"> {"name": "point to defend", "type": "absolute vector", "contents": {"x": 300, "y": 300}}
+						<label>point to defend</label>
+						<span class="contents handle">
+							<span class="handle">+</span>
+						</span>
+					</li>
+					<li class="field handle"> {"name": "radius", "type": "distance", "contents": 24.859}
+						<label>radius</label>
+						<span class="contents handle">
+							<span class="handle">R</span>
+						</span>
+					</li>
+					<li class="field handle"> {"name": "view direction", "type": "relative vector", "contents": {"x": -5, "y": 6}}
+						<label>view direction</label>
+						<span class="contents handle">
+							<span class="handle">D</span>
+						</span>
+					</li>
+					<li class="field number"> {"name": "health", "type": "number", "contents": 200.5}
+						<label>health</label>
+						<span class="contents number">200.5</span>
+					</li>
+					<li class="field number"> {"name": "damage", "type": "number", "contents": 30}
+						<label>damage</label>
+						<span class="contents number">30</span>
+					</li>
+				</ul>
+			</li>
+		</ul>
+	</body>
+</html>
