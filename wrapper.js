@@ -94,7 +94,31 @@ function Wrapper(name, type, value) {
 	this.element.append($('<div></div>').addClass('type').html(this.type));
 	this.element.append($('<div></div>').addClass('contents').html(this.contents));
 }
-Wrapper.prototype.process = function() { return jQuery.map(this.contents, function(val) { return val.process(); }); };
+
+function PositionW (name, value) {
+	if (!value) { value = {x: 0, y: 0}; }
+	Wrapper.call(this, name, 'position', value);
+	this.element.children('.contents').html('');
+	var handle = $('<span></span>').addClass('position-handle');
+	this.element.children('.contents').append(handle);
+	this.updateHTML();
+}
+PositionW.prototype = new Wrapper();
+PositionW.prototype.updateHTML = function () {
+	var old_name = this.element.children('.name').html();
+	if (old_name !== this.name) { this.element.children('.name').html(this.name); }
+	var old_type = this.element.children('.type').html();
+	if (old_type !== this.type) { this.element.children('.type').html(this.type); }
+
+
+	set_position_of_element(this.element.children('.contents .position-handle'), this.contents);
+	this.element.data('wrapper', this);
+}
+PositionW.prototype.setValue = function (position) {
+	if (!position.x || !position.y) {
+		console.log('error setting position of a position handle!');
+	}
+	set_position_of_element(this.element.children('.contents .position-handle'), this.contents);
 
 function NumberW (name, value) {
 	if (!value) { value = 0; }
@@ -106,6 +130,7 @@ function NumberW (name, value) {
 	this.element.append(input);
 	this.updateHTML();
 }
+NumberW.prototype = new Wrapper();
 NumberW.prototype.updateHTML = function () {
 	var old_name = this.element.children('.name').html();
 	if (old_name !== this.name) { this.element.children('.name').html(this.name); }
@@ -131,6 +156,7 @@ function StringW (name, value) {
 	this.element.append(input);
 	this.updateHTML();
 }
+StringW.prototype = new Wrapper();
 StringW.prototype.updateHTML = function () {
 	var old_name = this.element.children('.name').html();
 	if (old_name !== this.name) { this.element.children('.name').html(this.name); }
@@ -152,6 +178,7 @@ function ArrayW (name, contents) {
 	this.updateHTML();
 	this.total_count = 0;
 }
+ArrayW.prototype = new Wrapper();
 ArrayW.prototype.updateHTML = function () {
 	var old_name = this.element.children('.name').html();
 	if (old_name !== this.name) { this.element.children('.name').html(this.name); }
@@ -192,6 +219,7 @@ function ObjectW (name, contents) {
 	this.updateHTML();
 	this.total_count = 0;
 }
+ObjectW.prototype = new Wrapper();
 ObjectW.prototype.updateHTML = function () {
 	var old_name = this.element.children('.name').html();
 	if (old_name !== this.name) { this.element.children('.name').html(this.name); }
@@ -237,65 +265,3 @@ ObjectW.prototype.process = function() {
 	jQuery.each(this.contents, function(key, value) { out[key] = value.process(); });
 	return out;
 };
-
-/*
-function ArrayW (name, type, contents) {
-	this.parent = null;
-	this.element = element;
-	this.name = '';
-	this.type = '';
-	this.contents = [];
-this.setByValue = function (some_array) {
-	this.contents = [];
-	jQuery.each(some_array, function(index, value) {
-		this.contents.push(makeNewObject(value));
-	});
-	this.updateHTML();
-};
-this.push = function (some_object) {
-	this.contents.push(makeNewObject(value));
-	this.updateHTML();
-}
-this.updateHTML = function () {
-	this.element.html('');
-	this.element.append($('<div></div>').addClass('name').html(this.name));
-	this.element.append($('<div></div>').addClass('type').html(this.type));
-	this.element.append($('<ol></ol>').addClass('contents'));
-	jQuery.each(this.contents, function(index, child) {
-		child.updateHTML();
-		this.element.children('contents').append(child.element);
-	});
-};
-this.setMemberByName = function (name, value) {
-	for (var i=0; i<this.contents.length; i++) {
-		if (this.contents[i].name === name) {
-			this.contents[i].setByValue(value);
-		}
-	}
-};
-this.getMemberByName = function (name) {
-	for (var i=0; i<this.contents.length; i++) {
-		if (this.contents[i].name === name) {
-			return this.contents[i];
-		}
-	}
-};
-this.getMemberValueByName = function (name) {
-	return this.getMemberByName.process();
-};
-this.fullObject = function () {
-	var output = {};
-	output['name'] = this.getName();
-	output['type'] = this.getType();
-	output['contents'] = this.getContents();
-	return output;
-};
-this.process = function () {
-	var output = [];
-	for (var i=0; i<this.contents.length; i++) {
-		var current_object = this.contents[i];
-		output.push(this.contents[i].process());
-	}
-	return output;
-};
-*/
