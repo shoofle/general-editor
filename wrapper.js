@@ -76,6 +76,7 @@ $(document).ready(function() {
 	$(document).on('click', 'button.string', add(StringW));
 	$(document).on('click', 'button.array', add(ArrayW));
 	$(document).on('click', 'button.object', add(ObjectW));
+	$(document).on('click', 'button.circle', add(CircleW));
 });
 
 els = []
@@ -261,6 +262,59 @@ ObjectW.prototype.extend = function (obj) {
 	this.updateHTML();
 };
 ObjectW.prototype.process = function() {
+	var out = {};
+	jQuery.each(this.contents, function(key, value) { out[key] = value.process(); });
+	return out;
+};
+
+function CircleW (name, contents) {
+	Wrapper.call(this, name, 'object', {});
+	if (contents) { this.setValue(contents); }
+	this.updateHTML();
+	this.total_count = 0;
+}
+CircleW.prototype = new Wrapper();
+CircleW.prototype.updateHTML = function () {
+	var old_name = this.element.children('.name').html();
+	if (old_name !== this.name) { this.element.children('.name').html(this.name); }
+	var old_type = this.element.children('.type').html();
+	if (old_type !== this.type) { this.element.children('.type').html(this.type); }
+
+	this.element.children('.contents').children().remove();
+	this.element.children('.contents').remove();
+	var new_contents = $('<ul></ul>').addClass('contents');
+	jQuery.each(this.contents, function (key, value) { value.updateHTML(); new_contents.append(value.element); });
+	this.element.append(new_contents);
+	this.element.data('wrapper', this);
+};
+CircleW.prototype.setValue = function (obj) {
+	this.extend(obj);
+};
+CircleW.prototype.push = function (field) {
+	var field_name;
+	if (field.name) {
+		field_name = field.name;
+	}
+	else {
+		field_name = 'field #' + this.total_count;
+	}
+	this.total_count++;
+	var new_obj = {};
+	new_obj[field_name] = infer_type(field);
+	this.extend(new_obj);
+}
+CircleW.prototype.extend = function (obj) {
+	var new_contents = {};
+	jQuery.each(obj, function (key, value) { 
+			var new_wrapped_object = infer_type(value);
+			new_wrapped_object.name = key;
+			new_wrapped_object.updateHTML();
+			new_contents[key] = new_wrapped_object; 
+			});
+	jQuery.extend(this.contents, new_contents);
+	this.updateHTML();
+};
+CircleW.prototype.process = function() {
 	var out = {};
 	jQuery.each(this.contents, function(key, value) { out[key] = value.process(); });
 	return out;
